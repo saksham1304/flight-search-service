@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: flight-search-service
+  profiles:
+    active: local
+
+---
+# Local development / demo profile: in-memory H2 DB, no Redis required.
+# Run with: mvn spring-boot:run  (defaults to this profile)
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:h2:mem:flightdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  h2:
+    console:
+      enabled: true
+  cache:
+    type: simple   # in-memory ConcurrentHashMap cache, no Redis needed locally
+
+---
+# Production profile: MySQL + Redis, used when deployed.
+# Activate with: SPRING_PROFILES_ACTIVE=prod
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:flightdb}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+  cache:
+    type: redis
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+---
+# Real GDS integration (optional, opt-in). Get free test credentials at
+# https://developers.amadeus.com, then set amadeus.enabled=true and the
+# AMADEUS_API_KEY / AMADEUS_API_SECRET env vars to add a live 4th provider
+# alongside the 3 simulated ones. Disabled by default so the app runs with
+# zero external setup out of the box.
+amadeus:
+  enabled: ${AMADEUS_ENABLED:false}
+  api-key: ${AMADEUS_API_KEY:}
+  api-secret: ${AMADEUS_API_SECRET:}
